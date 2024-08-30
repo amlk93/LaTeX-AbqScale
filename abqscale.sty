@@ -1,0 +1,478 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% author: Alexander Malik
+% contact: Alexander.Malik@imfd.tu-freiberg.de
+% date: Sept 2019
+%
+% Package to create ABAQUS scales with 10/12/14/16 colors and equally spaced values.
+% Depending on preference the command can be used for all gradations or just minmax-values
+% command usage: arg1=max, arg2=min, arg3=Title, arg4=scaling_factor-global, arg5=scaling_factor-boxwidth
+% if box around scale and corresponding values is desired, use box-option: \usepackage[box]{abqscale}
+% for german documents (using comma instead of dot as delimiter) import via \usepackage[german]{abqscale}
+% font size option prepared but not inserted as it can be varied within the document by {\footnotesize \abqscalenumber{}{}{}{}{} }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% \usepackage{abqscale}%-->english typesetting, no frame
+% \usepackage[box]{abqscale}%-->english typesetting, frame
+% \usepackage[german]{abqscale}%-->german typesetting, no frame
+% \usepackage[german, box]{abqscale}%-->german typesetting, frame
+%
+%\abqscale*number*{*maximum value*}{*minimum value*}{*title*}{*general scaling factor*}{*frame width scaling*}
+% 10 colors
+% \abqscaleten{10.0}{-10.0}{test}{1}{1}
+% \abqscaletenminmax{10.0}{-10.0}{test}{1}{1}
+% 12 colors
+% \abqscaletwelve{10.0}{-14.0}{Reaction Force RF3}{1}{1}
+% \abqscaletwelveminmax{10.0}{-14.0}{Reaction Force RF3}{1}{1}
+% 14 colors
+% \abqscalefourteen{10.0}{-18.0}{Displacement U1}{1}{1}
+% \abqscalefourteenminmax{10.0}{-18.0}{Displacement U1}{1}{1}
+% 16 colors
+% \abqscalesixteen{10.0}{-22.0}{S. Max. Principal}{1}{1}
+% \abqscalesixteenminmax{10.0}{-22.0}{S. Max. Principal}{1}{1}
+%
+% horizontal scale
+% 10 colors
+%\abqscaletenminmaxhorizontal{10}{0}{title}{1}{1}
+%
+%
+% continuous scale
+% \abqcontinuousscaleminmax{10}{0}{title}{1}{1}
+%
+% horizontal continuous scale
+% \abqcontinuousscaleminmaxhorizontal{10}{0}{title}{1}{1}
+%
+%
+%
+%
+\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\ProvidesPackage{abqscale}[2019/09/22 Abaqus Scale Package]
+\RequirePackage{xcolor}
+\RequirePackage{tikz}
+\usetikzlibrary{math}
+\pgfkeys{/pgf/number format/1000 sep={\,}}
+
+%\newcommand{\size}{\normalsize}
+%\DeclareOption{normalsize}{
+%	\renewcommand{\size}{\normalsize}
+%}
+%\DeclareOption{footnotesize}{
+%	\renewcommand{\size}{\footnotesize}
+%}
+\newif\ifoptionalframe@boxoption\optionalframe@boxoptionfalse
+
+\DeclareOption{box}{\optionalframe@boxoptiontrue}
+
+\newcommand{\pgfsetting}{}
+\DeclareOption{english}{
+	\renewcommand{\pgfsetting}{}
+}
+\DeclareOption{german}{
+	\renewcommand{\pgfsetting}{/pgf/number format/use comma}
+}
+\ExecuteOptions{english}%,normalsize}
+\ProcessOptions\relax
+
+\newcommand{\makemycolor}[1]{%
+	%\pgfmathsetmacro{\hue}{(#1/100)^1.215*0.8}%{(#1/100)^1.715*0.8}
+	\pgfmathsetmacro{\hue}{#1*0.75}%{(#1/100)^1.715*0.8}
+	\definecolor{myhsbcolor}{rgb:hsb}{\hue,1,1}
+}
+\newcommand{\makemyconticolor}[1]{%
+	\pgfmathsetmacro{\hueone}{#1*0.7/51}%(#1/51)*1.85}%{(#1/100)^1.715*0.8}
+	\definecolor{mycontihsbcolorone}{rgb:hsb}{\hueone,1,1}
+	\pgfmathsetmacro{\huetwo}{(1+#1)*0.7/51}%{((1+#1)/61)*1.15}%{(#1/100)^1.715*0.8}
+	\definecolor{mycontihsbcolortwo}{rgb:hsb}{\huetwo,1,1}
+}
+
+\newcommand{\scaletickprecision}{3}
+\newcommand{\abqscaleten}[5]{
+	\tikzmath{
+		\step=(#1-#2)/10;
+		\vtwo=#1-\step;
+		\vthree=#1-2*\step;
+		\vfour=#1-3*\step;
+		\vfive=#1-4*\step;
+		\vsix=#1-5*\step;
+		\vseven=#1-6*\step;
+		\veight=#1-7*\step;
+		\vnine=#1-8*\step;
+		\vten=#1-9*\step;
+	}
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach[count=\x,count=\y] \position/\value in{
+		1/#1,2/\vtwo,3/\vthree,4/\vfour,5/\vfive,6/\vsix,7/\vseven,8/\veight,9/\vnine,10/\vten,11/#2
+	}{
+		\makemycolor{(\position-0.75)/11};
+		\draw (0,-\position+1) -- (1.5,-\position+1) node[right]{\pgfmathprintnumber[fixed, precision=\scaletickprecision]{\value}};
+		\ifnum \position < 11%\x
+		\draw[fill=myhsbcolor] (0,-\position) rectangle (1.125,-\position+1);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (4*#5,-10.5);
+		\fi
+	}
+    \node[anchor=center] at (1,1) {#3};
+	\end{tikzpicture}}
+\newcommand{\abqscaletenminmax}[5]{
+	\tikzmath{
+		\step=(#1-#2)/10;
+		\vtwo=#1-\step;
+		\vthree=#1-2*\step;
+		\vfour=#1-3*\step;
+		\vfive=#1-4*\step;
+		\vsix=#1-5*\step;
+		\vseven=#1-6*\step;
+		\veight=#1-7*\step;
+		\vnine=#1-8*\step;
+		\vten=#1-9*\step;
+	}
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach[count=\x,count=\y] \position/\value in{
+		1/#1,2/\vtwo,3/\vthree,4/\vfour,5/\vfive,6/\vsix,7/\vseven,8/\veight,9/\vnine,10/\vten,11/#2
+	}{
+		\makemycolor{(\position-0.75)/11};
+		\ifnum \position < 11%\x
+		\draw[fill=myhsbcolor] (0,-\position) rectangle (1.125,-\position+1);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (4*#5,-10.5);
+		\fi
+	}
+    \draw (0,0) -- (1.5,0) node[right]{#1};
+	\draw (0,-10) -- (1.5,-10) node[right]{#2};
+    \node[anchor=center,above] at (1,1.3) {#3};
+	\end{tikzpicture}}
+\newcommand{\abqscaletwelve}[5]{
+	\tikzmath{
+		\step=(#1-#2)/12;
+		\vtwo=#1-\step;
+		\vthree=#1-2*\step;
+		\vfour=#1-3*\step;
+		\vfive=#1-4*\step;
+		\vsix=#1-5*\step;
+		\vseven=#1-6*\step;
+		\veight=#1-7*\step;
+		\vnine=#1-8*\step;
+		\vten=#1-9*\step;
+		\veleven=#1-10*\step;
+		\vtwelve=#1-11*\step;
+	}
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach[count=\x,count=\y] \position/\value in{
+		1/#1,2/\vtwo,3/\vthree,4/\vfour,5/\vfive,6/\vsix,7/\vseven,8/\veight,9/\vnine,10/\vten,11/\veleven,12/\vtwelve,13/#2
+	}{
+		\makemycolor{(\position-0.75)/13};
+		\draw (0,-\position+1) -- (1.5,-\position+1) node[right]{\pgfmathprintnumber[fixed, precision=\scaletickprecision]{\value}};
+		\ifnum \position < 13%\x
+		\draw[fill=myhsbcolor] (0,-\position) rectangle (1.125,-\position+1);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (4*#5,-12.5);
+		\fi
+	}
+    \node[anchor=center] at (1,1) {#3};
+	\end{tikzpicture}}
+\newcommand{\abqscaletwelveminmax}[5]{
+	\tikzmath{
+		\step=(#1-#2)/12;
+		\vtwo=#1-\step;
+		\vthree=#1-2*\step;
+		\vfour=#1-3*\step;
+		\vfive=#1-4*\step;
+		\vsix=#1-5*\step;
+		\vseven=#1-6*\step;
+		\veight=#1-7*\step;
+		\vnine=#1-8*\step;
+		\vten=#1-9*\step;
+		\veleven=#1-10*\step;
+		\vtwelve=#1-11*\step;
+	}
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach[count=\x,count=\y] \position/\value in{
+		1/#1,2/\vtwo,3/\vthree,4/\vfour,5/\vfive,6/\vsix,7/\vseven,8/\veight,9/\vnine,10/\vten,11/\veleven,12/\vtwelve,13/#2
+	}{
+		\makemycolor{(\position-0.75)/13};
+		\ifnum \position < 13%\x
+		\draw[fill=myhsbcolor] (0,-\position) rectangle (1.125,-\position+1);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (4*#5,-12.5);
+		\fi
+	}
+    \draw (0,0) -- (1.5,0) node[right]{#1};
+	\draw (0,-12) -- (1.5,-12) node[right]{#2};
+    \node[anchor=center] at (1,1) {#3};
+	\end{tikzpicture}}
+\newcommand{\abqscalefourteen}[5]{
+	\tikzmath{
+		\step=(#1-#2)/14;
+		\vtwo=#1-\step;
+		\vthree=#1-2*\step;
+		\vfour=#1-3*\step;
+		\vfive=#1-4*\step;
+		\vsix=#1-5*\step;
+		\vseven=#1-6*\step;
+		\veight=#1-7*\step;
+		\vnine=#1-8*\step;
+		\vten=#1-9*\step;
+		\veleven=#1-10*\step;
+		\vtwelve=#1-11*\step;
+		\vthirteen=#1-12*\step;
+		\vfourteen=#1-13*\step;
+	}
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach[count=\x,count=\y] \position/\value in{
+		1/#1,2/\vtwo,3/\vthree,4/\vfour,5/\vfive,6/\vsix,7/\vseven,8/\veight,9/\vnine,10/\vten,11/\veleven,12/\vtwelve,13/\vthirteen,14/\vfourteen,15/#2
+	}{
+		\makemycolor{(\position-0.75)/15};
+		\draw (0,-\position+1) -- (1.5,-\position+1) node[right]{\pgfmathprintnumber[fixed, precision=\scaletickprecision]{\value}};
+		\ifnum \position < 15%\x
+		\draw[fill=myhsbcolor] (0,-\position) rectangle (1.125,-\position+1);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (4*#5,-14.5);
+		\fi
+	}
+    \node[anchor=center] at (1,1) {#3};
+	\end{tikzpicture}}
+\newcommand{\abqscalefourteenminmax}[5]{
+	\tikzmath{
+		\step=(#1-#2)/14;
+		\vtwo=#1-\step;
+		\vthree=#1-2*\step;
+		\vfour=#1-3*\step;
+		\vfive=#1-4*\step;
+		\vsix=#1-5*\step;
+		\vseven=#1-6*\step;
+		\veight=#1-7*\step;
+		\vnine=#1-8*\step;
+		\vten=#1-9*\step;
+		\veleven=#1-10*\step;
+		\vtwelve=#1-11*\step;
+		\vthirteen=#1-12*\step;
+		\vfourteen=#1-13*\step;
+	}
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach[count=\x,count=\y] \position/\value in{
+		1/#1,2/\vtwo,3/\vthree,4/\vfour,5/\vfive,6/\vsix,7/\vseven,8/\veight,9/\vnine,10/\vten,11/\veleven,12/\vtwelve,13/\vthirteen,14/\vfourteen,15/#2
+	}{
+		\makemycolor{(\position-0.75)/15};
+		\ifnum \position < 15%\x
+		\draw[fill=myhsbcolor] (0,-\position) rectangle (1.125,-\position+1);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (4*#5,-14.5);
+		\fi
+	}
+    \draw (0,0) -- (1.5,0) node[right]{#1};
+	\draw (0,-14) -- (1.5,-14) node[right]{#2};
+    \node[anchor=center] at (1,1) {#3};
+	\end{tikzpicture}}
+\newcommand{\abqscalesixteen}[5]{
+	\tikzmath{
+		\step=(#1-#2)/16;
+		\vtwo=#1-\step;
+		\vthree=#1-2*\step;
+		\vfour=#1-3*\step;
+		\vfive=#1-4*\step;
+		\vsix=#1-5*\step;
+		\vseven=#1-6*\step;
+		\veight=#1-7*\step;
+		\vnine=#1-8*\step;
+		\vten=#1-9*\step;
+		\veleven=#1-10*\step;
+		\vtwelve=#1-11*\step;
+		\vthirteen=#1-12*\step;
+		\vfourteen=#1-13*\step;
+		\vfifteen=#1-14*\step;
+		\vsixteen=#1-15*\step;
+	}
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach[count=\x,count=\y] \position/\value in{
+		1/#1,2/\vtwo,3/\vthree,4/\vfour,5/\vfive,6/\vsix,7/\vseven,8/\veight,9/\vnine,10/\vten,11/\veleven,12/\vtwelve,13/\vthirteen,14/\vfourteen,15/\vfifteen,16/\vsixteen,17/#2
+	}{
+		\makemycolor{(\position-0.75)/17};
+		\draw (0,-\position+1) -- (1.5,-\position+1) node[right]{\pgfmathprintnumber[fixed, precision=\scaletickprecision]{\value}};
+		\ifnum \position < 17%\x
+		\draw[fill=myhsbcolor] (0,-\position) rectangle (1.125,-\position+1);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (4*#5,-16.5);
+		\fi
+	}
+    \node[anchor=center] at (1,1) {#3};
+	\end{tikzpicture}}
+\newcommand{\abqscalesixteenminmax}[5]{
+	\tikzmath{
+		\step=(#1-#2)/16;
+		\vtwo=#1-\step;
+		\vthree=#1-2*\step;
+		\vfour=#1-3*\step;
+		\vfive=#1-4*\step;
+		\vsix=#1-5*\step;
+		\vseven=#1-6*\step;
+		\veight=#1-7*\step;
+		\vnine=#1-8*\step;
+		\vten=#1-9*\step;
+		\veleven=#1-10*\step;
+		\vtwelve=#1-11*\step;
+		\vthirteen=#1-12*\step;
+		\vfourteen=#1-13*\step;
+		\vfifteen=#1-14*\step;
+		\vsixteen=#1-15*\step;
+	}
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach[count=\x,count=\y] \position/\value in{
+		1/#1,2/\vtwo,3/\vthree,4/\vfour,5/\vfive,6/\vsix,7/\vseven,8/\veight,9/\vnine,10/\vten,11/\veleven,12/\vtwelve,13/\vthirteen,14/\vfourteen,15/\vfifteen,16/\vsixteen,17/#2
+	}{
+		\makemycolor{(\position-0.75)/17};
+		\ifnum \position < 17%\x
+		\draw[fill=myhsbcolor] (0,-\position) rectangle (1.125,-\position+1);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (4*#5,-16.5);
+		\fi
+	}
+    \draw (0,0) -- (1.5,0) node[right]{#1};
+	\draw (0,-16) -- (1.5,-16) node[right]{#2};
+    \node[anchor=center] at (1,1) {#3};
+	\end{tikzpicture}}
+\newcommand{\abqscaletenminmaxhorizontal}[5]{
+	\tikzmath{
+		\step=(#1-#2)/10;
+		\vtwo=#1-\step;
+		\vthree=#1-2*\step;
+		\vfour=#1-3*\step;
+		\vfive=#1-4*\step;
+		\vsix=#1-5*\step;
+		\vseven=#1-6*\step;
+		\veight=#1-7*\step;
+		\vnine=#1-8*\step;
+		\vten=#1-9*\step;
+	}
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach[count=\x,count=\y] \position/\value in{
+		1/#1,2/\vtwo,3/\vthree,4/\vfour,5/\vfive,6/\vsix,7/\vseven,8/\veight,9/\vnine,10/\vten,11/#2
+	}{
+		\makemycolor{(\position-0.75)/11};
+		\ifnum \position < 11%\x
+		\draw[fill=myhsbcolor] (11-\position-1,0) rectangle (11-\position,-1.125);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (10.5,-2.5*#4);
+		\fi
+	}
+    \draw (0,0) -- (0,-1.5) node[below]{#2};
+	\draw (10,0) -- (10,-1.5) node[below]{#1};
+    \node[anchor=center] at (5,1) {#3};
+	\end{tikzpicture}}
+\newcommand{\abqcontinuousscaleminmax}[5]{
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach \position in{
+		1,2,...,51
+	}{
+		\makemyconticolor{\position};
+		\ifnum \position < 51%\x
+		\draw[top color=mycontihsbcolorone,bottom color=mycontihsbcolortwo,draw opacity=0,line width=0mm] (0,-0.2*\position-0.0085) rectangle (1.125,-0.2*\position+0.2);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (4*#5,-10.5);
+		\fi
+	}
+    \draw (0,0) -- (1.5,0) node[right]{#1};
+	\draw (0,-10) -- (1.5,-10) node[right]{#2};
+	\draw (0,0) -- (0,-10);%uncomment if draw opacity !=0
+	\draw (1.125,0) -- (1.125,-10);%uncomment if draw opacity !=0
+    \node[anchor=center] at (1,1.3) {#3};
+	\end{tikzpicture}}
+\newcommand{\abqcontinuousscaleminmaxhorizontal}[5]{
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+	\foreach \position in{
+		1,2,...,51
+	}{
+		\makemyconticolor{\position};
+		\ifnum \position < 51%\x
+		\draw[right color=mycontihsbcolorone,left color=mycontihsbcolortwo,draw opacity=0,line width=0mm] (10.2-0.2*\position-0.2,0) rectangle (10.2-0.2*\position+0.0085,-1.125);
+		\fi
+		\ifoptionalframe@boxoption
+		\draw (-0.5,0.5) rectangle (10.5,-2.5*#4);
+		\fi
+	}
+    \draw (0,0) -- (0,-1.5) node[below]{#2};
+	\draw (10,0) -- (10,-1.5) node[below]{#1};
+	\draw (0,0) -- (10,0);
+	\draw (0,-1.125) -- (10,-1.125);
+    \node[anchor=center] at (5,1) {#3};
+	\end{tikzpicture}}
+%
+% black and white
+%
+\newcommand{\abqscaletenminmaxbw}[5]{
+	\tikzmath{
+		\step=(#1-#2)/10;
+		\vtwo=#1-\step;
+		\vthree=#1-2*\step;
+		\vfour=#1-3*\step;
+		\vfive=#1-4*\step;
+		\vsix=#1-5*\step;
+		\vseven=#1-6*\step;
+		\veight=#1-7*\step;
+		\vnine=#1-8*\step;
+		\vten=#1-9*\step;
+	}
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+		\foreach[count=\x,count=\y] \position/\value in{
+			1/#1,2/\vtwo,3/\vthree,4/\vfour,5/\vfive,6/\vsix,7/\vseven,8/\veight,9/\vnine,10/\vten,11/#2
+		}{
+			\makemybw{(\position)/10};
+			\ifnum \position < 11%\x
+			\draw[fill=mybw] (0,-\position) rectangle (1.125,-\position+1);
+			\fi
+			\ifoptionalframe@boxoption
+			\draw (-0.5,0.5) rectangle (4*#5,-10.5);
+			\fi
+		}
+		\draw (0,0) -- (1.5,0) node[right]{#1};
+		\draw (0,-10) -- (1.5,-10) node[right]{#2};
+		\node[anchor=center] at (1,1.3) {#3};
+\end{tikzpicture}}
+\newcommand{\abqcontinuousscaleminmaxbw}[5]{
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+		\foreach \position in{
+			1,2,...,51
+		}{
+			\makemycontibw{\position};
+			\ifnum \position < 51%\x
+			\draw[top color=mycontibwone,bottom color=mycontibwtwo,draw opacity=0,line width=0mm] (0,-0.2*\position-0.0085) rectangle (1.125,-0.2*\position+0.2);
+			\fi
+			\ifoptionalframe@boxoption
+			\draw (-0.5,0.5) rectangle (4*#5,-10.5);
+			\fi
+		}
+		\draw (0,0) -- (1.5,0) node[right]{#1};
+		\draw (0,-10) -- (1.5,-10) node[right]{#2};
+		\draw (0,0) -- (0,-10);%uncomment if draw opacity !=0
+		\draw (1.125,0) -- (1.125,-10);%uncomment if draw opacity !=0
+		\node[anchor=center] at (1,1.3) {#3};
+\end{tikzpicture}}
+\newcommand{\abqcontinuousscaleminmaxhorizontalbw}[5]{
+	\begin{tikzpicture}[scale=0.5*#4,\pgfsetting,/pgf/number format/1000 sep={\,}]
+		\foreach \position in{
+			1,2,...,51
+		}{
+			\makemycontibw{\position};
+			\ifnum \position < 51%\x
+			\draw[right color=mycontibwone,left color=mycontibwtwo,draw opacity=0,line width=0mm] (10.2-0.2*\position-0.2,0) rectangle (10.2-0.2*\position+0.0085,-1.125);
+			\fi
+			\ifoptionalframe@boxoption
+			\draw (-0.5,0.5) rectangle (10.5,-2.5*#4);
+			\fi
+		}
+		\draw (0,0) -- (0,-1.5) node[below]{#2};
+		\draw (10,0) -- (10,-1.5) node[below]{#1};
+		\draw (0,0) -- (10,0);%uncomment if draw opacity !=0
+		\draw (0,-1.125) -- (10,-1.125);%uncomment if draw opacity !=0
+		\node[anchor=center] at (5,1) {#3};
+\end{tikzpicture}}
+		
+\endinput
